@@ -3,6 +3,7 @@ defmodule BankAPI.Accounts.Events.DepositedIntoAccount do
 
   defstruct [
     :account_id,
-    :new_current_balance
+    :new_current_balance,
+    :transfer_id
   ]
 end

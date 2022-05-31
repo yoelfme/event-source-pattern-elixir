@@ -2,12 +2,17 @@ defmodule BankAPI.EventRouter do
   @moduledoc false
   use Commanded.Commands.Router
 
-  alias BankAPI.Accounts.Aggregates.Account
+  alias BankAPI.Accounts.Aggregates.{
+    Account,
+    AccountLifespan
+  }
+
   alias BankAPI.Accounts.Commands.{
     OpenAccount,
     CloseAccount,
     DepositIntoAccount,
-    WithdrawFromAccount
+    WithdrawFromAccount,
+    TransferBetweenAccounts
   }
 
   middleware BankAPI.Middleware.ValidateCommand
@@ -18,6 +23,7 @@ defmodule BankAPI.EventRouter do
     OpenAccount,
     CloseAccount,
     DepositIntoAccount,
-    WithdrawFromAccount
-  ], to: Account
+    WithdrawFromAccount,
+    TransferBetweenAccounts
+  ], to: Account, lifespan: AccountLifespan
 end

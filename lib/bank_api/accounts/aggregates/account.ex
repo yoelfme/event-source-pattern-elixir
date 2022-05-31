@@ -1,4 +1,5 @@
 defmodule BankAPI.Accounts.Aggregates.Account do
+  @derive Jason.Encoder
   defstruct id: nil, current_balance: nil, closed?: false
 
   alias BankAPI.Accounts.Aggregates.Account
@@ -6,13 +7,15 @@ defmodule BankAPI.Accounts.Aggregates.Account do
     OpenAccount,
     CloseAccount,
     DepositIntoAccount,
-    WithdrawFromAccount
+    WithdrawFromAccount,
+    TransferBetweenAccounts
   }
   alias BankAPI.Accounts.Events.{
     AccountOpened,
     AccoundClosed,
     DepositedIntoAccount,
-    WithdrawnFromAccount
+    WithdrawnFromAccount,
+    MoneyTransferRequested
   }
 
   # command handlers
@@ -20,12 +23,14 @@ defmodule BankAPI.Accounts.Aggregates.Account do
     %Account{id: account_id, closed?: false, current_balance: current_balance},
     %DepositIntoAccount{
       account_id: account_id,
-      deposit_amount: amount
+      deposit_amount: amount,
+      transfer_id: transfer_id
     }
   ) do
     %DepositedIntoAccount{
       account_id: account_id,
-      new_current_balance: current_balance + amount
+      new_current_balance: current_balance + amount,
+      transfer_id: transfer_id
     }
   end
 
@@ -45,12 +50,13 @@ defmodule BankAPI.Accounts.Aggregates.Account do
 
   def execute(
     %Account{id: account_id, closed?: false, current_balance: current_balance},
-    %WithdrawFromAccount{account_id: account_id, withdraw_amount: amount}
+    %WithdrawFromAccount{account_id: account_id, withdraw_amount: amount, transfer_id: transfer_id}
   ) do
     if current_balance - amount > 0 do
       %WithdrawnFromAccount{
         account_id: account_id,
-        new_current_balance: current_balance - amount
+        new_current_balance: current_balance - amount,
+        transfer_id: transfer_id
       }
     else
       {:error, :insufficient_funds}
@@ -124,6 +130,56 @@ defmodule BankAPI.Accounts.Aggregates.Account do
     {:error, :account_already_opened}
   end
 
+  def execute(
+    %Account{id: account_id, closed?: true},
+    %TransferBetweenAccounts{
+      account_id: account_id
+    }), do: {:error, :account_closed}
+
+  def execute(
+    %Account{id: account_id, closed?: false},
+    %TransferBetweenAccounts{
+      account_id: account_id,
+      destination_account_id: destination_account_id
+    }
+  ) when account_id === destination_account_id do
+    {:error, :transfer_to_same_account}
+  end
+
+  def execute(
+    %Account{id: account_id, closed?: false, current_balance: current_balance},
+    %TransferBetweenAccounts{
+      account_id: account_id,
+      transfer_amount: transfer_amount
+    }
+  ) when current_balance < transfer_amount do
+    {:error, :insufficient_funds}
+  end
+
+  def execute(
+    %Account{id: account_id, closed?: false},
+    %TransferBetweenAccounts{
+      account_id: account_id,
+      transfer_id: transfer_id,
+      transfer_amount: transfer_amount,
+      destination_account_id: destination_account_id
+    }
+  ) do
+    %MoneyTransferRequested{
+      transfer_id: transfer_id,
+      source_account_id: account_id,
+      amount: transfer_amount,
+      destination_account_id: destination_account_id
+    }
+  end
+
+  def execute(
+    %Account{},
+    %TransferBetweenAccounts{}
+  ) do
+    {:error, :not_found}
+  end
+
   # state mutators
 
   def apply(
@@ -182,5 +238,12 @@ defmodule BankAPI.Accounts.Aggregates.Account do
       account
       | closed?: true
     }
+  end
+
+  def apply(
+    %Account{} = account,
+    %MoneyTransferRequested{}
+  ) do
+    account
   end
 end

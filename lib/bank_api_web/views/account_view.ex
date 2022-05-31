@@ -9,7 +9,7 @@ defmodule BankAPIWeb.AccountView do
   end
 
   def render("account.json", %{account: account}) do
-    if account.status == Account.status().closed do
+    if account.status != Account.status().closed do
       %{
         id: account.id,
         current_balance: account.current_balance

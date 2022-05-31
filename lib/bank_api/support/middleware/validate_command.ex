@@ -9,6 +9,7 @@ defmodule BankAPI.Middleware.ValidateCommand do
         pipeline
 
       {:error, messages} ->
+        IO.inspect(messages)
         pipeline
         |> Pipeline.respond({:error, :command_validation_failure, command, messages})
         |> Pipeline.halt()

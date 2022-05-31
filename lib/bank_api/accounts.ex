@@ -8,7 +8,8 @@ defmodule BankAPI.Accounts do
     OpenAccount,
     CloseAccount,
     DepositIntoAccount,
-    WithdrawFromAccount
+    WithdrawFromAccount,
+    TransferBetweenAccounts
   }
   alias BankAPI.Accounts.Projections.Account
 
@@ -18,7 +19,17 @@ defmodule BankAPI.Accounts do
     ~r/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/
   end
 
-  def get_account(id), do: Repo.get!(Account, id)
+  def get_account(id), do: {:ok, Repo.get(Account, id)}
+
+  def transfer(source_id, amount, destination_id) do
+    %TransferBetweenAccounts{
+      account_id: source_id,
+      transfer_id: UUID.uuid4(),
+      transfer_amount: amount,
+      destination_account_id: destination_id
+    }
+    |> EventApp.dispatch()
+  end
 
   def close_account(id) do
     %CloseAccount{
@@ -45,7 +56,6 @@ defmodule BankAPI.Accounts do
         reply
     end
   end
-
   def withdraw(id, amount) do
     dispatch_result =
       %WithdrawFromAccount{
@@ -64,7 +74,6 @@ defmodule BankAPI.Accounts do
         reply
     end
   end
-
   def open_account(%{"initial_balance" => initial_balance}) do
     account_id = UUID.uuid4()
 

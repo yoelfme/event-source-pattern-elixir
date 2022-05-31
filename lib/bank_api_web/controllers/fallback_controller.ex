@@ -23,11 +23,11 @@ defmodule BankAPIWeb.FallbackController do
     |> render("422.json")
   end
 
-  def call(conn, {:error, :command_validation_failure, _command, _errors}) do
+  def call(conn, {:error, :command_validation_failure, _command, [error | _tail]}) do
     conn
     |> put_status(:unprocessable_entity)
     |> put_view(BankAPIWeb.ErrorView)
-    |> assign(:message, "Command validation error")
+    |> assign(:message, error)
     |> render("422.json")
   end
 
@@ -52,6 +52,14 @@ defmodule BankAPIWeb.FallbackController do
     |> put_status(:unprocessable_entity)
     |> put_view(BankAPIWeb.ErrorView)
     |> assign(:message, "Insufficient funds to process order")
+    |> render("422.json")
+  end
+
+  def call(conn, {:error, :transfer_to_same_account}) do
+    conn
+    |> put_status(:unprocessable_entity)
+    |> put_view(BankAPIWeb.ErrorView)
+    |> assign(:message, "Source and destination accounts are the same")
     |> render("422.json")
   end
 end

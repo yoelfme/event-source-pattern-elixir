@@ -11,6 +11,8 @@ defmodule BankAPI.Accounts.Projectors.DepositsAndWithdrawals do
   alias Ecto.{Changeset, Multi}
 
   project(%DepositedIntoAccount{} = event, _metadata, fn multi ->
+    IO.inspect("getting account")
+    IO.inspect(Accounts.get_account(event.account_id))
     with {:ok, %Account{} = account} <- Accounts.get_account(event.account_id) do
       Multi.update(
         multi,
@@ -22,7 +24,12 @@ defmodule BankAPI.Accounts.Projectors.DepositsAndWithdrawals do
       )
     else
       # ignore when this happens
-      _ -> multi
+      error ->
+        IO.inspect([
+          "error getting account",
+          error
+        ])
+        multi
     end
   end)
 

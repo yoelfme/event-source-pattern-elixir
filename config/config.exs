@@ -31,6 +31,18 @@ config :phoenix, :json_library, Jason
 config :bank_api, event_stores: [BankAPI.EventStore]
 config :bank_api, BankAPI.EventStore, serializer: Commanded.Serialization.JsonSerializer
 
+config :bank_api, BankAPI.EventApp,
+  snapshotting: %{
+    BankAPI.Accounts.Aggregates.Account => [
+      snapshot_every: 10,
+      snapshot_version: 1
+    ]
+  }
+
+# config :commanded, BankAPI.Accounts.Aggregates.Account,
+#   snapshot_every: 10,
+#   snapshot_version: 1
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"

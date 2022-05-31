@@ -1,6 +1,6 @@
 defmodule BankAPI.Accounts.Commands.WithdrawFromAccount do
   @enforce_keys [:account_id]
-  defstruct [:account_id, :withdraw_amount]
+  defstruct [:account_id, :withdraw_amount, :transfer_id]
 
   alias BankAPI.Accounts
   alias BankAPI.Accounts.Commands.Validators
